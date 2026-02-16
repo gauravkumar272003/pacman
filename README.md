@@ -135,7 +135,39 @@ a.y + a.height > b.y
 
 ### Ghost AI
 
-Ghosts move randomly and change direction when hitting walls.
+Ghosts use the A (A-Star) pathfinding algorithm* to intelligently chase PacMan.
+
+Instead of moving randomly, each ghost:
+
+Converts its pixel position into grid coordinates
+
+Calculates the shortest path to PacMan using A*
+
+Uses a priority queue with the function:
+
+f(n) = g(n) + h(n)
+
+Where:
+
+g(n) = distance from ghost to current tile
+
+h(n) = Manhattan distance heuristic to PacMan
+
+This ensures:
+
+Optimal shortest path
+
+Fast computation suitable for real‑time gameplay
+
+Efficient navigation around walls
+
+This makes ghost behavior intelligent and similar to classic PacMan AI.
+
+Performance complexity:
+
+Time Complexity: O(V log V)
+
+Which is extremely fast for a 21 × 19 grid.
 
 ---
 
