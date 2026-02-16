@@ -2,6 +2,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashSet;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.random.*;
 import javax.swing.*;
@@ -73,6 +74,107 @@ public class PacMan extends JPanel implements ActionListener, KeyListener {
             this.x = this.startX;
             this.y = this.startY;
         }
+    }
+
+    class Node {
+        int r, c;
+        int g, h, f;
+        Node parent;
+
+        Node(int r, int c, int g, int h, Node parent) {
+            this.r = r;
+            this.c = c;
+            this.g = g;
+            this.h = h;
+            this.f = g + h;
+            this.parent = parent;
+        }
+    }
+
+    private boolean isWall(int r, int c) {
+        if (r < 0 || c < 0 || r >= rowCount || c >= columnCount)
+            return true;
+        return tileMap[r].charAt(c) == 'X';
+    }
+
+    private int heuristic(int r1, int c1, int r2, int c2) {
+        return Math.abs(r1 - r2) + Math.abs(c1 - c2); // Manhattan distance
+    }
+
+    private char getNextDirectionAStar(Block ghost) {
+
+        int startR = ghost.y / tileSize;
+        int startC = ghost.x / tileSize;
+
+        int targetR = pacman.y / tileSize;
+        int targetC = pacman.x / tileSize;
+
+        PriorityQueue<Node> open = new PriorityQueue<>((a, b) -> a.f - b.f);
+        boolean[][] closed = new boolean[rowCount][columnCount];
+
+        Node start = new Node(startR, startC, 0,
+                heuristic(startR, startC, targetR, targetC), null);
+
+        open.add(start);
+
+        Node endNode = null;
+
+        int[] dr = { -1, 1, 0, 0 };
+        int[] dc = { 0, 0, -1, 1 };
+
+        while (!open.isEmpty()) {
+
+            Node current = open.poll();
+
+            if (current.r == targetR && current.c == targetC) {
+                endNode = current;
+                break;
+            }
+
+            if (closed[current.r][current.c])
+                continue;
+
+            closed[current.r][current.c] = true;
+
+            for (int i = 0; i < 4; i++) {
+
+                int nr = current.r + dr[i];
+                int nc = current.c + dc[i];
+
+                if (isWall(nr, nc) || closed[nr][nc])
+                    continue;
+
+                int g = current.g + 1;
+                int h = heuristic(nr, nc, targetR, targetC);
+
+                Node next = new Node(nr, nc, g, h, current);
+
+                open.add(next);
+            }
+        }
+
+        if (endNode == null)
+            return ghost.direction;
+
+        Node step = endNode;
+
+        while (step.parent != null && step.parent.parent != null) {
+            step = step.parent;
+        }
+
+        int moveR = step.r - startR;
+        int moveC = step.c - startC;
+
+        if (moveR == -1)
+            return 'U';
+        if (moveR == 1)
+            return 'D';
+        if (moveC == -1)
+            return 'L';
+        if (moveC == 1)
+            return 'R';
+
+        return ghost.direction;
     }
 
     private int rowCount = 21;
@@ -260,7 +362,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener {
                     ghost.x -= ghost.velocityX;
                     ghost.y -= ghost.velocityY;
 
-                    char newDirection = directions[random.nextInt(4)];
+                    char newDirection = getNextDirectionAStar(ghost);
                     ghost.updateDirection(newDirection);
                 }
             }
